@@ -1,63 +1,76 @@
 # Series Track Memory (Jellyfin 12.x)
 
-Plugin que memoriza o áudio e a legenda escolhidos numa série, como a Netflix.
-Você troca as faixas no player uma vez, em qualquer episódio. Os outros episódios da série já abrem assim, em qualquer cliente.
+A Jellyfin plugin that remembers the audio and subtitle you pick for a series, like Netflix does.
+Change the tracks in the player once, in any episode. Every other episode of the series then starts with them, on any client.
 
-## Como funciona
+## How it works
 
-O Jellyfin já guarda a faixa escolhida em cada episódio ("remember selections") e usa isso como padrão no próximo play.
-O plugin estende isso para a série inteira.
+Jellyfin already stores the tracks picked in each episode ("remember selections") and uses them as the default the next time that episode plays.
+This plugin extends that to the whole series.
 
-1. Durante o play, o servidor registra a faixa escolhida. O plugin escuta esse registro e descreve a faixa pelo idioma, título e flags forced/SDH.
-2. Ele procura a faixa equivalente em cada outro episódio da série, mesmo em índice diferente, e grava como seleção lembrada.
-3. No próximo episódio, o próprio servidor entrega essa faixa como padrão, então não há troca visível depois do play.
-4. Episódios adicionados depois recebem a preferência assim que são escaneados.
+1. While you watch, the server records the selected tracks. The plugin listens to that and describes each track by language, title and forced/SDH flags.
+2. It finds the equivalent track in every other episode of the series, even at a different index, and stores it as that episode's remembered selection.
+3. When the next episode starts, the server itself hands out those tracks as defaults, so nothing switches after playback begins.
+4. Episodes added later get the preference as soon as they are scanned.
 
-Séries que você nunca ajustou e filmes continuam com o padrão global do usuário.
-Se um episódio não tem o idioma aprendido, ele usa o padrão global e o plugin não "desaprende" a preferência.
+Movies and series you never adjusted keep the user's global defaults.
+If an episode does not have the learned language, it falls back to the global defaults and the plugin keeps the series preference unchanged.
 
-## Requisitos
+### Track matching
+
+- The language must match. Codes are normalized, so `pt-BR`, `pt`, `por` and `pob` are all Portuguese.
+- Among tracks in the same language, the best score wins: same forced flag, same SDH flag, same region (Brazil vs Portugal, Latin American vs Castilian Spanish), similar title, same embedded/external origin, same position.
+- Titles only break ties, so subtitles named differently by different fansubs still match when there is a single track in that language.
+- Tracks without a language tag only match other untagged tracks, falling back to the same position.
+
+## Requirements
 
 - Jellyfin 12.x.
-- Cada usuário precisa manter ligadas as opções de lembrar a seleção de áudio e de legenda, nas configurações de reprodução. As duas vêm ligadas por padrão. Com uma delas desligada, o plugin ignora aquela parte.
+- Each user must keep the "remember audio selections" and "remember subtitle selections" playback options enabled. Both are on by default. If one is off, the plugin ignores that part.
 
-## Instalação no servidor (NAS)
+## Installation
 
-### Pelo catálogo, recomendado
+### From the plugin catalog (recommended)
 
-1. Suba este projeto para um repositório no GitHub.
-2. Crie uma tag de versão com quatro números, por exemplo `v1.0.0.0`. O workflow testa, gera o zip, publica a release e atualiza o `manifest.json`.
-   ```
-   git tag v1.0.0.0 && git push origin v1.0.0.0
-   ```
-   Para versões de teste, use um sufixo, por exemplo `v0.1.0.0-alpha`. O plugin recebe a versão `0.1.0.0` e a release do GitHub sai como pré-release. O Jellyfin não aceita sufixo na versão do plugin.
-3. No Jellyfin, vá em Painel > Plugins > Repositórios e adicione:
+1. In Jellyfin, go to Dashboard > Plugins > Repositories and add:
    ```
    https://raw.githubusercontent.com/jmarcelocjr/jellyfin-series-track-memory/main/manifest.json
    ```
-4. Instale "Series Track Memory" no catálogo e reinicie o servidor.
+2. Install "Series Track Memory" from the catalog and restart the server.
+
+Client apps do not need a restart. The plugin runs entirely on the server.
 
 ### Manual
 
 ```
-scripts/package.sh 0.1.0.0 jmarcelocjr/jellyfin-series-track-memory
+scripts/package.sh 1.0.0.0 jmarcelocjr/jellyfin-series-track-memory
 ```
 
-Copie `artifacts/publish/Jellyfin.Plugin.SeriesTrackMemory.dll` para `<pasta de config do Jellyfin>/plugins/SeriesTrackMemory_0.1.0.0/` no NAS e reinicie o servidor.
+Copy `artifacts/publish/Jellyfin.Plugin.SeriesTrackMemory.dll` to `<jellyfin config dir>/plugins/SeriesTrackMemory_1.0.0.0/` and restart the server.
 
-## Uso
+## Usage
 
-- Anime: no primeiro episódio, escolha áudio japonês e legenda pt-BR e deixe tocar alguns segundos.
-- Desenho dublado: escolha áudio português e desligue a legenda.
-- A página do plugin no Painel lista as séries aprendidas por usuário. O botão "Forget" apaga a preferência e limpa as seleções gravadas.
+- Anime: in the first episode, pick Japanese audio and your subtitle, then let it play for a few seconds.
+- Dubbed cartoons: pick the dubbed audio and turn subtitles off.
+- The plugin page in the Dashboard lists learned series per user. "Forget" deletes the preference and clears the selections it wrote.
 
-## Observações
+## Notes
 
-- A opção do jellyfin-web "Definir faixa com base no item anterior" também escolhe faixas na reprodução contínua. Em geral as duas concordam. Se houver conflito, desligue essa opção.
-- O aprendizado usa os relatórios de progresso do player, que chegam a cada poucos segundos. Uma troca feita e desfeita logo em seguida pode não ser registrada.
-- O plugin registra no log do servidor linhas "Learned tracks" e "Propagated".
+- The jellyfin-web option "Set audio track based on previous item" also picks tracks during continuous playback. Both usually agree. If they conflict, turn that option off.
+- Learning uses the player's progress reports, which arrive every few seconds. A track change undone right away may not be recorded.
+- The plugin logs "Learned tracks" and "Propagated" lines in the server log.
 
-## Desenvolvimento
+## Releasing
+
+Push a tag with four version numbers. The workflow runs the tests, builds the zip, publishes the GitHub release and updates `manifest.json`.
+
+```
+git tag -a v1.0.0.0 -m "Release 1.0.0.0" && git push origin v1.0.0.0
+```
+
+For test builds, add a suffix such as `v0.1.0.0-alpha`. The plugin gets version `0.1.0.0` and the GitHub release is marked as a pre-release, because Jellyfin does not accept suffixes in plugin versions.
+
+## Development
 
 ```
 dotnet build
