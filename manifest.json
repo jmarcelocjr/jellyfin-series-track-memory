@@ -6,6 +6,15 @@
     "overview": "Per-series audio/subtitle memory, learned automatically during playback.",
     "owner": "jmarcelocjr",
     "category": "General",
-    "versions": []
+    "versions": [
+      {
+        "version": "0.1.0.0",
+        "changelog": "Release v0.1.0.0-alpha",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/jmarcelocjr/jellyfin-series-track-memory/releases/download/v0.1.0.0-alpha/series-track-memory_0.1.0.0.zip",
+        "checksum": "e4185a8e87dd66259502b01937d00528",
+        "timestamp": "2026-10-01T16:01:09Z"
+      }
+    ]
   }
 ]
