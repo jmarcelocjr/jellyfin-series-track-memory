@@ -30,19 +30,20 @@ Se um episódio não tem o idioma aprendido, ele usa o padrão global e o plugin
    ```
    git tag v1.0.0.0 && git push origin v1.0.0.0
    ```
+   Para versões de teste, use um sufixo, por exemplo `v0.1.0.0-alpha`. O plugin recebe a versão `0.1.0.0` e a release do GitHub sai como pré-release. O Jellyfin não aceita sufixo na versão do plugin.
 3. No Jellyfin, vá em Painel > Plugins > Repositórios e adicione:
    ```
-   https://raw.githubusercontent.com/<usuario>/<repo>/main/manifest.json
+   https://raw.githubusercontent.com/jmarcelocjr/jellyfin-series-track-memory/main/manifest.json
    ```
 4. Instale "Series Track Memory" no catálogo e reinicie o servidor.
 
 ### Manual
 
 ```
-scripts/package.sh 1.0.0.0 <usuario>/<repo>
+scripts/package.sh 0.1.0.0 jmarcelocjr/jellyfin-series-track-memory
 ```
 
-Copie `artifacts/publish/Jellyfin.Plugin.SeriesTrackMemory.dll` para `<pasta de config do Jellyfin>/plugins/SeriesTrackMemory_1.0.0.0/` no NAS e reinicie o servidor.
+Copie `artifacts/publish/Jellyfin.Plugin.SeriesTrackMemory.dll` para `<pasta de config do Jellyfin>/plugins/SeriesTrackMemory_0.1.0.0/` no NAS e reinicie o servidor.
 
 ## Uso
 

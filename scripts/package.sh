@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # Builds the plugin, creates the install zip and adds a version entry to manifest.json.
-# Usage: scripts/package.sh <version> <github-owner/repo>
-#   e.g. scripts/package.sh 1.0.0.0 marcelocerqueira/jellyfin-series-track-memory
+# Usage: scripts/package.sh <version> <github-owner/repo> [tag]
+#   e.g. scripts/package.sh 0.1.0.0 jmarcelocjr/jellyfin-series-track-memory v0.1.0.0-alpha
+# <version> must be four numbers (Jellyfin requirement). [tag] defaults to v<version>.
 set -euo pipefail
 
 VERSION="${1:?version, e.g. 1.0.0.0}"
 REPO="${2:?github owner/repo}"
+TAG="${3:-v$VERSION}"
 TARGET_ABI="12.0.0.0"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PROJECT="$ROOT/src/Jellyfin.Plugin.SeriesTrackMemory/Jellyfin.Plugin.SeriesTrackMemory.csproj"
@@ -22,15 +24,15 @@ rm -f "$OUT/$ZIP_NAME"
 if command -v md5sum >/dev/null; then CHECKSUM=$(md5sum "$OUT/$ZIP_NAME" | cut -d' ' -f1); else CHECKSUM=$(md5 -q "$OUT/$ZIP_NAME"); fi
 
 python3 - "$ROOT/manifest.json" "$VERSION" "$TARGET_ABI" "$CHECKSUM" \
-  "https://github.com/$REPO/releases/download/v$VERSION/$ZIP_NAME" <<'PY'
+  "https://github.com/$REPO/releases/download/$TAG/$ZIP_NAME" "$TAG" <<'PY'
 import datetime, json, sys
-path, version, abi, checksum, url = sys.argv[1:]
+path, version, abi, checksum, url, tag = sys.argv[1:]
 with open(path) as f:
     manifest = json.load(f)
 versions = [v for v in manifest[0]["versions"] if v["version"] != version]
 versions.insert(0, {
     "version": version,
-    "changelog": f"Release {version}",
+    "changelog": f"Release {tag}",
     "targetAbi": abi,
     "sourceUrl": url,
     "checksum": checksum,
