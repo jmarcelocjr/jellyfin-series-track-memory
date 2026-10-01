@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Jellyfin.Plugin.SeriesTrackMemory/Jellyfin.Plugin.SeriesTrackMemory.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Jellyfin.Plugin.SeriesTrackMemory.Tests/Jellyfin.Plugin.SeriesTrackMemory.Tests.csproj" />
+  </Folder>
+</Solution>

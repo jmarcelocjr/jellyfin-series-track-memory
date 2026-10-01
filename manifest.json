@@ -1,0 +1,11 @@
+[
+  {
+    "guid": "a76ae084-4797-4253-9cd4-12ae965b9fff",
+    "name": "Series Track Memory",
+    "description": "Remembers the audio and subtitle you pick in one episode and uses them for the whole series, like Netflix.",
+    "overview": "Per-series audio/subtitle memory, learned automatically during playback.",
+    "owner": "jmarcelocjr",
+    "category": "General",
+    "versions": []
+  }
+]

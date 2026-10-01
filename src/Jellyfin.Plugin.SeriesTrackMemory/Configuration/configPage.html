@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Series Track Memory</title>
+</head>
+<body>
+    <div id="SeriesTrackMemoryConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-checkbox">
+        <div data-role="content">
+            <div class="content-primary">
+                <h2>Series Track Memory</h2>
+                <p>
+                    Pick the audio and subtitle once, in any episode, and the whole series follows.
+                    Choices are learned per user while playing and stored in each episode's
+                    "remembered selection", so every client starts with the right tracks.
+                </p>
+
+                <form id="SeriesTrackMemoryConfigForm">
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input id="EnableLearning" type="checkbox" is="emby-checkbox" />
+                            <span>Learn track choices during playback</span>
+                        </label>
+                        <div class="fieldDescription checkboxFieldDescription">
+                            When a user changes audio or subtitles in an episode, apply it to the other episodes of the series.
+                        </div>
+                    </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input id="ApplyToNewEpisodes" type="checkbox" is="emby-checkbox" />
+                            <span>Apply to newly added episodes</span>
+                        </label>
+                        <div class="fieldDescription checkboxFieldDescription">
+                            Episodes added later get the learned tracks as soon as they are scanned.
+                        </div>
+                    </div>
+                    <div class="fieldDescription">
+                        Requires "Remember audio selections" and "Remember subtitle selections" enabled in each user's
+                        playback settings (enabled by default).
+                    </div>
+                    <div>
+                        <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                            <span>Save</span>
+                        </button>
+                    </div>
+                </form>
+
+                <h3 style="margin-top:2em;">Learned series</h3>
+                <p id="stmEmpty" class="fieldDescription">Nothing learned yet. Change audio or subtitles while watching an episode.</p>
+                <div style="overflow-x:auto;">
+                    <table id="stmTable" class="detailTable" style="width:100%; display:none;">
+                        <thead>
+                            <tr>
+                                <th style="text-align:left;">Series</th>
+                                <th style="text-align:left;">User</th>
+                                <th style="text-align:left;">Audio</th>
+                                <th style="text-align:left;">Subtitle</th>
+                                <th style="text-align:left;">Learned</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="stmRows"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <script type="text/javascript">
+            (function () {
+                var pluginId = 'a76ae084-4797-4253-9cd4-12ae965b9fff';
+                var page = document.querySelector('#SeriesTrackMemoryConfigPage');
+
+                function text(value) {
+                    var span = document.createElement('span');
+                    span.textContent = value;
+                    return span;
+                }
+
+                function loadPreferences() {
+                    return ApiClient.fetch({
+                        url: ApiClient.getUrl('SeriesTrackMemory/Preferences'),
+                        type: 'GET',
+                        dataType: 'json'
+                    }).then(function (items) {
+                        var rows = page.querySelector('#stmRows');
+                        rows.innerHTML = '';
+                        page.querySelector('#stmEmpty').style.display = items.length ? 'none' : '';
+                        page.querySelector('#stmTable').style.display = items.length ? '' : 'none';
+
+                        items.forEach(function (p) {
+                            var tr = document.createElement('tr');
+                            [p.SeriesName || p.seriesName, p.UserName || p.userName, p.Audio || p.audio, p.Subtitle || p.subtitle,
+                             new Date(p.UpdatedUtc || p.updatedUtc).toLocaleString()].forEach(function (value) {
+                                var td = document.createElement('td');
+                                td.appendChild(text(value));
+                                tr.appendChild(td);
+                            });
+
+                            var action = document.createElement('td');
+                            var button = document.createElement('button');
+                            button.setAttribute('is', 'emby-button');
+                            button.className = 'raised emby-button';
+                            button.type = 'button';
+                            button.textContent = 'Forget';
+                            button.addEventListener('click', function () {
+                                Dashboard.showLoadingMsg();
+                                ApiClient.ajax({
+                                    url: ApiClient.getUrl('SeriesTrackMemory/Preferences/' + (p.UserId || p.userId) + '/' + (p.SeriesId || p.seriesId)),
+                                    type: 'DELETE'
+                                }).then(loadPreferences).finally(function () {
+                                    Dashboard.hideLoadingMsg();
+                                });
+                            });
+                            action.appendChild(button);
+                            tr.appendChild(action);
+                            rows.appendChild(tr);
+                        });
+                    });
+                }
+
+                page.addEventListener('pageshow', function () {
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                        page.querySelector('#EnableLearning').checked = config.EnableLearning;
+                        page.querySelector('#ApplyToNewEpisodes').checked = config.ApplyToNewEpisodes;
+                        return loadPreferences();
+                    }).finally(function () {
+                        Dashboard.hideLoadingMsg();
+                    });
+                });
+
+                page.querySelector('#SeriesTrackMemoryConfigForm').addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                        config.EnableLearning = page.querySelector('#EnableLearning').checked;
+                        config.ApplyToNewEpisodes = page.querySelector('#ApplyToNewEpisodes').checked;
+                        return ApiClient.updatePluginConfiguration(pluginId, config);
+                    }).then(function (result) {
+                        Dashboard.processPluginConfigurationUpdateResult(result);
+                    });
+                    return false;
+                });
+            })();
+        </script>
+    </div>
+</body>
+</html>
